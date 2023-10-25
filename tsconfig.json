@@ -29,7 +29,7 @@
     },
     "include": [
       "src/**/*.ts"
-  , "src/server.ts" ],
+  , "server.ts" ],
     "exclude": [
       "node_modules"
     ]
