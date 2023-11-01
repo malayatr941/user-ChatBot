@@ -1,9 +1,9 @@
 import User from '../models/User';
-import { ESResponse, Login, IUser, ForgetPassword, NewPassword } from '@interfaces';
+import { ESResponse, Login, IUser, ForgetPassword, NewPassword, EditProfile } from '@interfaces';
 import { Response } from 'express';
 import responseHelper from '../responses/response.helper';
-const jwt = require('jsonwebtoken');
 import Redis from './redis.helper';
+import { jwtHelper, jwtVerify } from './jwt.helper';
 
 class UserHelper {
   public data: ESResponse;
@@ -14,9 +14,7 @@ class UserHelper {
       if (isUser) {
         throw 'User already exists';
       }
-      const token = jwt.sign({ email: payload.email, domain: payload.company }, process.env.SECRET_TOKEN, {
-        expiresIn: '1d',
-      });
+      const token = jwtHelper(payload.email, payload.company);
       payload.token = token;
       const newUser = new User(payload);
 
@@ -51,24 +49,39 @@ class UserHelper {
       if (isUser) {
         const result: boolean = payload.password == isUser.password;
         if (result) {
-          this.data = {
-            error: false,
-            data: isUser,
-            message: 'User logged in successfull',
-            status: 200,
-          };
+          const token = jwtHelper(isUser.email, isUser.company);
+          await User.updateOne(
+            { email: isUser.email },
+            {
+              $set: {
+                token: token,
+              },
+            },
+          )
+            .then(() => {
+              isUser.token = token;
+              this.data = {
+                error: false,
+                data: isUser,
+                message: 'User logged in successfully',
+                status: 200,
+              };
+            })
+            .catch((err) => {
+              throw err.toString();
+            });
           responseHelper.success(res, this.data);
         } else {
-          throw 'Wrong password';
+          throw { message: 'Wrong Password', status: 404 };
         }
       } else {
-        throw 'User not exist';
+        throw 'User not Exist';
       }
     } catch (error) {
       this.data = {
         error: true,
         data: {},
-        message: error.toString(),
+        message: error.message ? error.message : error.toString(),
         status: 500,
       };
       responseHelper.error(res, this.data);
@@ -95,9 +108,7 @@ class UserHelper {
     try {
       const isUser: IUser = await this.userExist(payload.email);
       if (isUser) {
-        const token = jwt.sign({ email: payload.email }, process.env.SECRET_TOKEN, {
-          expiresIn: '5m',
-        });
+        const token = jwtHelper(payload.email, isUser.company);
         this.data = {
           error: false,
           data: { token: token },
@@ -121,7 +132,7 @@ class UserHelper {
 
   newPassword = async (res: Response, payload: NewPassword) => {
     try {
-      const verify = jwt.verify(payload.token, process.env.SECRET_TOKEN);
+      const verify = jwtVerify(payload.token);
       if (verify) {
         await User.updateOne(
           { email: verify.email },
@@ -135,7 +146,7 @@ class UserHelper {
             this.data = {
               error: false,
               data: res,
-              message: 'Password Changed Successfully',
+              message: 'Password changed successfully',
               status: 200,
             };
           })
@@ -145,6 +156,56 @@ class UserHelper {
         responseHelper.success(res, this.data);
       } else {
         throw 'User not exist';
+      }
+    } catch (error) {
+      this.data = {
+        error: true,
+        data: {},
+        message: error.toString(),
+        status: 500,
+      };
+      responseHelper.error(res, this.data);
+    }
+  };
+  getDetails = async (res: Response, token: string | string[]) => {
+    const decode = jwtVerify(token);
+    await User.findOne({ email: decode.email })
+      .select('-password')
+      .then((res) => {
+        if (res) {
+          this.data = {
+            error: false,
+            data: res,
+            message: 'Details fetched successfully',
+            status: 200,
+          };
+        } else {
+          throw { message: 'No details found' };
+        }
+      })
+      .catch((err) => {
+        throw err.toString();
+      });
+    responseHelper.success(res, this.data);
+  };
+  editProfile = async (res: Response, payload: EditProfile) => {
+    try {
+      const isUser: IUser = await this.userExist(payload.email);
+      const result: boolean = payload.password == isUser.password;
+      if (result) {
+        await User.updateOne({ email: isUser.email }, { $set: payload })
+          .then((res) => {
+            this.data = {
+              error: false,
+              data: res,
+              message: 'Profile updated successfully',
+              status: 200,
+            };
+          })
+          .catch((err) => {
+            throw err.toString();
+          });
+        responseHelper.success(res, this.data);
       }
     } catch (error) {
       this.data = {

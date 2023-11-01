@@ -8,6 +8,16 @@ interface IUser {
   avatar?: string;
   _id?: string;
 }
+interface IUser {
+  name: string;
+  email: string;
+  password: string;
+  company: string;
+  token?: string;
+  createdAt?: Date;
+  avatar?: string;
+  _id?: string;
+}
 
 interface Login {
   email: string;
@@ -22,4 +32,12 @@ interface NewPassword {
   password: string;
 }
 
-export { IUser, Login, ForgetPassword, NewPassword };
+interface EditProfile {
+  name?: string;
+  email?: string;
+  password: string;
+  company?: string;
+  avatar?: string;
+}
+
+export { IUser, Login, ForgetPassword, NewPassword, EditProfile };

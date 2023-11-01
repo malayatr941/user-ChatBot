@@ -4,5 +4,14 @@ interface ESResponse {
   message: string;
   status: number;
 }
+interface ESdomain {
+  domain: string;
+  ip: string;
+  ping: boolean;
+  ping_time: number;
+  success: boolean;
+  online: boolean;
+  statusCode: number;
+}
 
-export { ESResponse };
+export { ESResponse, ESdomain };

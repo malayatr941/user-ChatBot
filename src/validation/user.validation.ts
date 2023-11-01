@@ -39,3 +39,17 @@ export const newPasswordValidation = (req: express.Request, res: express.Respons
   }
   next();
 };
+export const editProfileValidation = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const schema = Joi.object({
+    name: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+    company: Joi.string().required(),
+    avatar: Joi.string().required(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(401).send(error.toString());
+  }
+  next();
+};

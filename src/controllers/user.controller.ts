@@ -1,6 +1,7 @@
 import { Controller } from '@interfaces';
 import { Request, Response, Router } from 'express';
 import UserHelper from '../helpers/user.helper';
+import originMiddle from '../middlewares/authentication';
 import { registerValidation, loginValidation, newPasswordValidation } from '../validation';
 
 class UserController implements Controller {
@@ -16,6 +17,8 @@ class UserController implements Controller {
     this.router.post(`${this.path}/login`, loginValidation, this.loginUser);
     this.router.post(`${this.path}/forget`, this.forgetPassword);
     this.router.post(`${this.path}/newPassword`, newPasswordValidation, this.newPassword);
+    this.router.get(`${this.path}/getDetails`, originMiddle.origin, this.getDetails);
+    this.router.post(`${this.path}/editProfile`, this.editProfile);
   }
 
   private registerUser = async (req: Request, res: Response) => {
@@ -29,6 +32,12 @@ class UserController implements Controller {
   };
   private newPassword = async (req: Request, res: Response) => {
     await UserHelper.newPassword(res, req.body);
+  };
+  private getDetails = async (req: Request, res: Response) => {
+    await UserHelper.getDetails(res, req.headers['x-auth-token']);
+  };
+  private editProfile = async (req: Request, res: Response) => {
+    await UserHelper.editProfile(res, req.body);
   };
 }
 
