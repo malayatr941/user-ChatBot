@@ -15,7 +15,6 @@ interface IUser {
   company: string;
   token?: string;
   createdAt?: Date;
-  avatar?: string;
   _id?: string;
 }
 
