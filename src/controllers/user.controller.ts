@@ -3,6 +3,8 @@ import { Request, Response, Router } from 'express';
 import UserHelper from '../helpers/user.helper';
 import originMiddle from '../middlewares/authentication';
 import { registerValidation, loginValidation, newPasswordValidation } from '../validation';
+const multer = require('multer');
+const upload = multer({ dest: __dirname + '/new/' });
 
 class UserController implements Controller {
   public path = '/user';
@@ -13,7 +15,7 @@ class UserController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/register`, registerValidation, this.registerUser);
+    this.router.post(`${this.path}/register`, upload.single('image'), registerValidation, this.registerUser);
     this.router.post(`${this.path}/login`, loginValidation, this.loginUser);
     this.router.post(`${this.path}/forget`, this.forgetPassword);
     this.router.post(`${this.path}/newPassword`, newPasswordValidation, this.newPassword);
@@ -22,7 +24,7 @@ class UserController implements Controller {
   }
 
   private registerUser = async (req: Request, res: Response) => {
-    await UserHelper.register(res, req.body);
+    await UserHelper.register(res, req.body.user, req);
   };
   private loginUser = async (req: Request, res: Response) => {
     await UserHelper.login(res, req.body);

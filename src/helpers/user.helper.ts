@@ -8,7 +8,7 @@ import { jwtHelper, jwtVerify } from './jwt.helper';
 class UserHelper {
   public data: ESResponse;
 
-  register = async (res: Response, payload: IUser) => {
+  register = async (res: Response, payload: IUser, file: any) => {
     try {
       const isUser = await this.userExist(payload.email);
       if (isUser) {
@@ -16,8 +16,8 @@ class UserHelper {
       }
       const token = jwtHelper(payload.email, payload.company);
       payload.token = token;
+      payload.avatar = file.file.originalname;
       const newUser = new User(payload);
-
       await newUser.save().then(async (user) => {
         await Redis.client.lPush(`${user._id}`, token);
         const length = await Redis.client.lLen(`${user._id}`);
@@ -169,6 +169,7 @@ class UserHelper {
   };
   getDetails = async (res: Response, token: string | string[]) => {
     const decode = jwtVerify(token);
+    console.log(decode);
     await User.findOne({ email: decode.email })
       .select('-password')
       .then((res) => {
@@ -193,6 +194,9 @@ class UserHelper {
       const isUser: IUser = await this.userExist(payload.email);
       const result: boolean = payload.password == isUser.password;
       if (result) {
+        if (payload.newPassword) {
+          payload.password = payload.newPassword;
+        }
         await User.updateOne({ email: isUser.email }, { $set: payload })
           .then((res) => {
             this.data = {
@@ -206,6 +210,8 @@ class UserHelper {
             throw err.toString();
           });
         responseHelper.success(res, this.data);
+      } else {
+        throw 'Incorrect Password';
       }
     } catch (error) {
       this.data = {
