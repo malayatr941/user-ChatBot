@@ -2,7 +2,7 @@ import User from '../models/User';
 import { ESResponse, Login, IUser, ForgetPassword, NewPassword, EditProfile } from '@interfaces';
 import { Response } from 'express';
 import responseHelper from '../responses/response.helper';
-import Redis from './redis.helper';
+//import Redis from './redis.helper';
 import { jwtHelper, jwtVerify } from './jwt.helper';
 
 class UserHelper {
@@ -19,11 +19,11 @@ class UserHelper {
       payload.avatar = file.file.originalname;
       const newUser = new User(payload);
       await newUser.save().then(async (user) => {
-        await Redis.client.lPush(`${user._id}`, token);
-        const length = await Redis.client.lLen(`${user._id}`);
-        if (length > 1) {
-          Redis.client.rPop(`${user._id}`);
-        }
+        // await Redis.client.lPush(`${user._id}`, token);
+        // const length = await Redis.client.lLen(`${user._id}`);
+        // if (length > 1) {
+        //   Redis.client.rPop(`${user._id}`);
+        // }
         this.data = {
           error: false,
           data: user,
