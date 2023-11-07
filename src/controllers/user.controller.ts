@@ -1,5 +1,5 @@
 import { Controller } from '@interfaces';
-import { Request, Response, Router } from 'express';
+import { Request, Response, Router } from "express";
 import UserHelper from '../helpers/user.helper';
 import originMiddle from '../middlewares/authentication';
 import { registerValidation, loginValidation, newPasswordValidation } from '../validation';
@@ -24,7 +24,7 @@ class UserController implements Controller {
   }
 
   private registerUser = async (req: Request, res: Response) => {
-    await UserHelper.register(res, req.body.user, req);
+    await UserHelper.register(res, req.body, req);
   };
   private loginUser = async (req: Request, res: Response) => {
     await UserHelper.login(res, req.body);

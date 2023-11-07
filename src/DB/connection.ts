@@ -1,4 +1,4 @@
-import mongoose, { ConnectOptions } from 'mongoose';
+import mongoose, { ConnectOptions } from "mongoose";
 let database: mongoose.Connection;
 
 export const connect = async () => {
@@ -14,7 +14,7 @@ export const connect = async () => {
     .then(() => {
       console.log('Connected to MongoDB');
     })
-    .catch((err) => {
+    .catch((err:Error) => {
       console.log(`Database connection failed`, err);
     });
 };

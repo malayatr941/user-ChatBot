@@ -9,6 +9,7 @@ class UserHelper {
   public data: ESResponse;
 
   register = async (res: Response, payload: IUser, file: any) => {
+    console.log(file.file)
     try {
       const isUser = await this.userExist(payload.email);
       if (isUser) {
@@ -18,7 +19,7 @@ class UserHelper {
       payload.token = token;
       payload.avatar = file.file.originalname;
       const newUser = new User(payload);
-      await newUser.save().then(async (user) => {
+      await newUser.save().then(user => {
         // await Redis.client.lPush(`${user._id}`, token);
         // const length = await Redis.client.lLen(`${user._id}`);
         // if (length > 1) {
