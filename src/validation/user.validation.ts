@@ -1,14 +1,14 @@
-import * as Joi from 'joi';
+import * as Joi from "joi";
 import * as express from 'express';
 
 export const registerValidation = (req: any, res: express.Response, next: express.NextFunction) => {
-  // const schema = Joi.object({
-  //   name: Joi.string().min(3).required(),
-  //   password: Joi.string().min(8).required(),
-  //   email: Joi.string().email().required(),
-  //   company: Joi.string().required(),
-  // });
-  const schema2 = Joi.object({
+  const userSchema = Joi.object({
+    name: Joi.string().min(3).required(),
+    password: Joi.string().min(8).required(),
+    email: Joi.string().email().required(),
+    company: Joi.string().required(),
+  });
+  const fileSchema = Joi.object({
     fieldname: Joi.string(),
     originalname: Joi.string(),
     encoding: Joi.string(),
@@ -18,10 +18,15 @@ export const registerValidation = (req: any, res: express.Response, next: expres
     path: Joi.string(),
     size: Joi.number(),
   });
-  const { error } = schema2.validate(req.file, req.body);
-  //const { error } = schema.validate(req.body.user);
-  if (error) {
-    return res.status(401).send(error.toString());
+  const { error: userError } = userSchema.validate(req.body.user);
+  const { error: fileError } = fileSchema.validate(req.file);
+
+  if (userError || fileError) {
+    const errors = [];
+    if (userError) errors.push(...userError.details);
+    if (fileError) errors.push(...fileError.details);
+
+    return res.status(401).send(errors.map((err) => err.message).join(', '));
   }
   next();
 };

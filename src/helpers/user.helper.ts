@@ -19,28 +19,27 @@ class UserHelper {
       payload.token = token;
       payload.avatar = file.file.originalname;
       const newUser = new User(payload);
-      await newUser.save().then(user => {
-        // await Redis.client.lPush(`${user._id}`, token);
-        // const length = await Redis.client.lLen(`${user._id}`);
-        // if (length > 1) {
-        //   Redis.client.rPop(`${user._id}`);
-        // }
-        this.data = {
-          error: false,
-          data: user,
-          message: 'User created successfully',
-          status: 200,
-        };
-        responseHelper.success(res, this.data);
-      });
+      const userDetails = await newUser.save();
+      // await Redis.client.lPush(`${user._id}`, token);
+      // const length = await Redis.client.lLen(`${user._id}`);
+      // if (length > 1) {
+      //   Redis.client.rPop(`${user._id}`);
+      // }
+      const data = {
+        error: false,
+        data: userDetails,
+        message: 'User created successfully',
+        status: 200,
+      };
+      responseHelper.success(res, data);
     } catch (error) {
-      this.data = {
+      const data = {
         error: true,
         data: {},
         message: error.toString(),
         status: 500,
       };
-      responseHelper.error(res, this.data);
+      responseHelper.error(res, data);
     }
   };
 
@@ -48,8 +47,8 @@ class UserHelper {
     try {
       const isUser: IUser = await this.userExist(payload.email);
       if (isUser) {
-        const result: boolean = payload.password == isUser.password;
-        if (result) {
+        const passwordMatch: boolean = payload.password === isUser.password;
+        if (passwordMatch) {
           const token = jwtHelper(isUser.email, isUser.company);
           await User.updateOne(
             { email: isUser.email },
@@ -58,34 +57,30 @@ class UserHelper {
                 token: token,
               },
             },
-          )
-            .then(() => {
-              isUser.token = token;
-              this.data = {
-                error: false,
-                data: isUser,
-                message: 'User logged in successfully',
-                status: 200,
-              };
-            })
-            .catch((err) => {
-              throw err.toString();
-            });
-          responseHelper.success(res, this.data);
+          );
+          isUser.token = token;
+          const data = {
+            error: false,
+            data: isUser,
+            message: 'User logged in successfully',
+            status: 200,
+          };
+
+          responseHelper.success(res, data);
         } else {
-          throw { message: 'Wrong Password', status: 404 };
+          throw { message: 'Wrong password', status: 404 };
         }
       } else {
-        throw 'User not Exist';
+        throw 'User does not exist';
       }
     } catch (error) {
-      this.data = {
+      const data = {
         error: true,
         data: {},
         message: error.message ? error.message : error.toString(),
         status: 500,
       };
-      responseHelper.error(res, this.data);
+      responseHelper.error(res, data);
     }
   };
 
@@ -110,118 +105,114 @@ class UserHelper {
       const isUser: IUser = await this.userExist(payload.email);
       if (isUser) {
         const token = jwtHelper(payload.email, isUser.company);
-        this.data = {
+        const data = {
           error: false,
           data: { token: token },
-          message: 'User Exist',
+          message: 'User exist',
           status: 200,
         };
-        responseHelper.success(res, this.data);
+        responseHelper.success(res, data);
       } else {
-        throw 'User not exist';
+        throw 'User does not exist';
       }
     } catch (error) {
-      this.data = {
+      const data = {
         error: true,
         data: {},
         message: error.toString(),
         status: 500,
       };
-      responseHelper.error(res, this.data);
+      responseHelper.error(res, data);
     }
   };
 
   newPassword = async (res: Response, payload: NewPassword) => {
     try {
       const verify = jwtVerify(payload.token);
+
       if (verify) {
-        await User.updateOne(
+        const updateResult = await User.updateOne(
           { email: verify.email },
           {
             $set: {
               password: payload.password,
             },
           },
-        )
-          .then((res) => {
-            this.data = {
-              error: false,
-              data: res,
-              message: 'Password changed successfully',
-              status: 200,
-            };
-          })
-          .catch((err) => {
-            throw err.toString();
-          });
-        responseHelper.success(res, this.data);
+        );
+        if (updateResult.modifiedCount > 0) {
+          const data = {
+            error: false,
+            data: updateResult,
+            message: 'Password changed successfully',
+            status: 200,
+          };
+          responseHelper.success(res, data);
+        } else {
+          throw 'You can not use password same as previous one.';
+        }
       } else {
-        throw 'User not exist';
+        throw 'User does not exist';
       }
     } catch (error) {
-      this.data = {
+      const data = {
         error: true,
         data: {},
         message: error.toString(),
         status: 500,
       };
-      responseHelper.error(res, this.data);
+      responseHelper.error(res, data);
     }
   };
+
   getDetails = async (res: Response, token: string | string[]) => {
-    const decode = jwtVerify(token);
-    console.log(decode);
-    await User.findOne({ email: decode.email })
-      .select('-password')
-      .then((res) => {
-        if (res) {
-          this.data = {
-            error: false,
-            data: res,
-            message: 'Details fetched successfully',
-            status: 200,
-          };
-        } else {
-          throw { message: 'No details found' };
-        }
-      })
-      .catch((err) => {
-        throw err.toString();
-      });
-    responseHelper.success(res, this.data);
+    try {
+      const decodedToken = jwtVerify(token);
+      const user = await User.findOne({ email: decodedToken.email }).select('-password');
+
+      if (user) {
+        const data = {
+          error: false,
+          data: user,
+          message: 'Details fetched successfully',
+          status: 200,
+        };
+        responseHelper.success(res, data);
+      } else {
+        throw { message: 'No details found' };
+      }
+    } catch (error) {
+      responseHelper.error(res, error.toString());
+    }
   };
   editProfile = async (res: Response, payload: EditProfile) => {
     try {
       const isUser: IUser = await this.userExist(payload.email);
-      const result: boolean = payload.password == isUser.password;
-      if (result) {
+      const passwordsMatch: boolean = payload.password === isUser.password;
+
+      if (passwordsMatch) {
         if (payload.newPassword) {
           payload.password = payload.newPassword;
         }
-        await User.updateOne({ email: isUser.email }, { $set: payload })
-          .then((res) => {
-            this.data = {
-              error: false,
-              data: res,
-              message: 'Profile updated successfully',
-              status: 200,
-            };
-          })
-          .catch((err) => {
-            throw err.toString();
-          });
-        responseHelper.success(res, this.data);
+        const updateResult = await User.updateOne({ email: isUser.email }, { $set: payload });
+        const responseData = {
+          error: false,
+          data: updateResult,
+          message: 'Profile updated successfully',
+          status: 200,
+        };
+
+        responseHelper.success(res, responseData);
       } else {
-        throw 'Incorrect Password';
+        throw new Error('Incorrect Password');
       }
     } catch (error) {
-      this.data = {
+      const data = {
         error: true,
         data: {},
         message: error.toString(),
         status: 500,
       };
-      responseHelper.error(res, this.data);
+      responseHelper.error(res, data);
     }
   };
 }
