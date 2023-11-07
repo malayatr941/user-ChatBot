@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+
 export const jwtHelper = (email: string, company: string) => {
   try {
     return jwt.sign({ email: email, domain: company }, process.env.SECRET_TOKEN, {

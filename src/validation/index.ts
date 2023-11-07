@@ -1,3 +1,3 @@
-import { registerValidation, loginValidation, newPasswordValidation } from './user.validation';
+import * as UserValidation from './user.validation';
 
-export { registerValidation, loginValidation, newPasswordValidation };
+export { UserValidation };
