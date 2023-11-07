@@ -98,6 +98,7 @@ class UserHelper {
         .catch((err) => reject(err));
     });
   };
+
   forgetPassword = async (res: Response, payload: ForgetPassword) => {
     try {
       const isUser: IUser = await this.userExist(payload.email);
