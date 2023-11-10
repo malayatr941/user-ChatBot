@@ -40,7 +40,7 @@ class UserController implements Controller {
   }
 
   private registerUser = async (req: Request, res: Response) => {
-    await UserHelper.register(res, req.body, req);
+    await UserHelper.register(res, req.body.user, req);
   };
   private loginUser = async (req: Request, res: Response) => {
     await UserHelper.login(res, req.body);
